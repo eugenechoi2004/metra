@@ -1,41 +1,34 @@
 import gym
+from stable_baselines3 import SAC
 
 # Create the environment
-env = gym.make('Ant-v4', render_mode='human')
+env = gym.make('Ant-v4')
 
-# Initialize the environment
-state = env.reset()
+# Create the SAC model
+model = SAC("MlpPolicy", env, verbose=1)
 
-# Set the number of episodes and steps per episode
-num_episodes = 10
-max_steps_per_episode = 1000
+# Train the model
+model.learn(total_timesteps=100000)  # Adjust timesteps as needed
 
-for episode in range(num_episodes):
-    # Reset the environment at the beginning of each episode
-    state, _ = env.reset()
-    episode_reward = 0
+# Save the model
+model.save("sac_ant")
 
-    for step in range(max_steps_per_episode):
-        # Render the environment (if needed)
-        env.render()
+# Optionally, load the trained model
+# model = SAC.load("sac_ant")
 
-        # Sample a random action from the action space
-        action = env.action_space.sample()
+# Test the trained model
+state, _ = env.reset()
+episode_reward = 0
 
-        # Take a step in the environment using the sampled action
-        next_state, reward, done, truncated, info = env.step(action)
+for _ in range(1000):  # Adjust the number of test steps
+    env.render()
+    action, _ = model.predict(state)
+    state, reward, done, truncated, _ = env.step(action)
+    episode_reward += reward
 
-        # Update the episode reward
-        episode_reward += reward
+    if done or truncated:
+        print(f"Total Reward: {episode_reward}")
+        state, _ = env.reset()
+        episode_reward = 0
 
-        # Move to the next state
-        state = next_state
-
-        # Check if the episode has ended
-        if done or truncated:
-            break
-
-    print(f"Episode {episode + 1}: Total Reward = {episode_reward}")
-
-# Close the environment
 env.close()
