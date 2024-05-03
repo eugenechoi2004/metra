@@ -97,7 +97,7 @@ class ActorNetwork(nn.Module):
         prob = self.actor(state)
         mu = self.mu(prob)
         sigma = self.sigma(prob)
-        sigma = torch.clamp(min=self.reparam_noise, max=1)
+        sigma = torch.clamp(sigma, min=self.reparam_noise, max=1)
         return mu, sigma
 
     def sample_normal(self, state, reparameterize=True):
@@ -107,9 +107,11 @@ class ActorNetwork(nn.Module):
             actions = probs.rsample()
         else:
             actions = probs.sample()
-        action = (torch.tanh(actions) * self.max_action).to(self.device)
-
+        action = (torch.tanh(actions) * torch.tensor(self.max_action)).to(self.device)
+        print(probs)
         log_probs = probs.log_prob(actions)
+        print("This is log probs")
+        print(log_probs)
         log_probs -= torch.log(1-action.pow(2)+self.reparam_noise)
         log_probs = log_probs.sum(1, keepdim=True)
 
