@@ -43,6 +43,21 @@ class CriticNetwork(nn.Module):
     def load_checkpoint(self):
         self.load_state_dict(T.load(self.checkpoint_file))
 
+class Phi(nn.Module):
+    def __init__(self, state_dim, z_dim, hidden_layer = 256) -> None:
+        super(Phi, self).__init__()
+        self.model = nn.Sequential(
+            nn.Linear(state_dim, hidden_layer),
+            nn.ReLU(),
+            nn.Linear(hidden_layer, hidden_layer),
+            nn.ReLU(),
+            nn.Linear(hidden_layer, z_dim)
+        )
+
+    def forward(self, state):
+        return self.model(state)
+
+
 class ValueNetwork(nn.Module):
     def __init__(self, beta, input_dims, fc1_dims=256, fc2_dims=256,
             name='value', chkpt_dir='tmp/sac'):
@@ -81,7 +96,7 @@ class ValueNetwork(nn.Module):
 
 class ActorNetwork(nn.Module):
     def __init__(self, alpha, input_dims, max_action, fc1_dims=256, 
-            fc2_dims=256, n_actions=2, name='actor', chkpt_dir='tmp/sac'):
+            fc2_dims=256, n_actions=2, name='actor', chkpt_dir='tmp/sac', z_dim = 2):
         super(ActorNetwork, self).__init__()
         self.input_dims = input_dims
         self.fc1_dims = fc1_dims
@@ -93,7 +108,7 @@ class ActorNetwork(nn.Module):
         self.max_action = max_action
         self.reparam_noise = 1e-6
 
-        self.fc1 = nn.Linear(*self.input_dims, self.fc1_dims)
+        self.fc1 = nn.Linear(*self.input_dims + z_dim, self.fc1_dims)
         self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
         self.mu = nn.Linear(self.fc2_dims, self.n_actions)
         self.sigma = nn.Linear(self.fc2_dims, self.n_actions)
@@ -103,20 +118,19 @@ class ActorNetwork(nn.Module):
 
         self.to(self.device)
 
-    def forward(self, state):
-        prob = self.fc1(state)
+    def forward(self, state, z):
+        prob = self.fc1(T.cat([state, z], dim=1))
         prob = F.relu(prob)
         prob = self.fc2(prob)
         prob = F.relu(prob)
         mu = self.mu(prob)
         sigma = self.sigma(prob)
-
-        sigma = T.clamp(sigma, min=0.01, max=1)
+        sigma = T.clamp(sigma, min=self.reparam_noise, max=1)
 
         return mu, sigma
 
-    def sample_normal(self, state, reparameterize=True):
-        mu, sigma = self.forward(state)
+    def sample_normal(self, state, z, reparameterize=True):
+        mu, sigma = self.forward(state,z)
         probabilities = Normal(mu, sigma)
 
         if reparameterize:
