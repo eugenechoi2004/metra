@@ -42,7 +42,7 @@ class ReplayBuffer():
 
 class CriticNetwork(nn.Module):
     def __init__(self, learning_rate,state_size,action_size, hidden_layer_size):
-        super(CriticNetwork).__init__()
+        super(CriticNetwork, self).__init__()
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.critic = nn.Sequential(
             nn.Linear(state_size + action_size, hidden_layer_size),
@@ -51,7 +51,7 @@ class CriticNetwork(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_layer_size, 1)
         )
-        self.optimizer = optim.Adam(self.parameters, lr= learning_rate)
+        self.optimizer = optim.Adam(self.parameters(), lr= learning_rate)
         self.to(self.device)
     
     def forward(self, state, action):
@@ -60,7 +60,7 @@ class CriticNetwork(nn.Module):
 
 class ValueNetwork(nn.Module):
     def __init__(self, learning_rate,state_size, hidden_layer_size):
-        super(ValueNetwork).__init__()
+        super(ValueNetwork, self).__init__()
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.value = nn.Sequential(
             nn.Linear(state_size, hidden_layer_size),
@@ -69,7 +69,7 @@ class ValueNetwork(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_layer_size, 1)
         )
-        self.optimizer = optim.Adam(self.parameters, lr= learning_rate)
+        self.optimizer = optim.Adam(self.parameters(), lr= learning_rate)
         self.to(self.device)
 
     def forward(self, state):
@@ -78,19 +78,17 @@ class ValueNetwork(nn.Module):
 
 class ActorNetwork(nn.Module):
     def __init__(self, learning_rate,state_size, action_size, hidden_layer_size, max_action):
-        super(ActorNetwork).__init__()
+        super(ActorNetwork, self).__init__()
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        print(state_size)
-        print(action_size)
         self.actor = nn.Sequential(
-            nn.Linear(state_size + action_size, hidden_layer_size),
+            nn.Linear(state_size, hidden_layer_size),
             nn.ReLU(),
             nn.Linear(hidden_layer_size, hidden_layer_size),
             nn.ReLU(),
         )
         self.mu = nn.Linear(hidden_layer_size, 1)
         self.sigma = nn.Linear(hidden_layer_size, 1)
-        self.optimizer = optim.Adam(self.parameters, lr= learning_rate)
+        self.optimizer = optim.Adam(self.actor.parameters(), lr= learning_rate)
         self.to(self.device)
         self.reparam_noise = 1e-6
         self.max_action = max_action
@@ -102,10 +100,10 @@ class ActorNetwork(nn.Module):
         sigma = torch.clamp(min=self.reparam_noise, max=1)
         return mu, sigma
 
-    def sample_normal(self, state, reparam=True):
+    def sample_normal(self, state, reparameterize=True):
         mu, sigma = self.forward(state)
         probs = Normal(mu, sigma)
-        if reparam:
+        if reparameterize:
             actions = probs.rsample()
         else:
             actions = probs.sample()

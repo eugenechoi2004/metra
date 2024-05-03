@@ -15,12 +15,12 @@ class Agent():
         self.batch_size = batch_size
         self.n_actions = n_actions
         hidden_layer_size = 256
-        self.actor = ActorNetwork(alpha ,input_dims, n_actions, hidden_layer_size, env.action_space.high)
-        self.critic_1 = CriticNetwork(beta, input_dims, n_actions, hidden_layer_size)
-        self.critic_2 = CriticNetwork(beta, input_dims, n_actions, hidden_layer_size)
+        self.actor = ActorNetwork(alpha ,input_dims[0], n_actions, hidden_layer_size, env.action_space.high)
+        self.critic_1 = CriticNetwork(beta, input_dims[0], n_actions, hidden_layer_size)
+        self.critic_2 = CriticNetwork(beta, input_dims[0], n_actions, hidden_layer_size)
 
-        self.value = ValueNetwork(beta, input_dims, hidden_layer_size)
-        self.target_value =  ValueNetwork(beta, input_dims, hidden_layer_size)
+        self.value = ValueNetwork(beta, input_dims[0], hidden_layer_size)
+        self.target_value =  ValueNetwork(beta, input_dims[0], hidden_layer_size)
 
         self.scale = reward_scale
         self.update_network_parameters(tau=1)
@@ -113,7 +113,7 @@ class Agent():
 env = gym.make('Ant-v4')
 n_games = 150
 
-agent = Agent(input_dims=env.observation_space.shape[0], env=env,
+agent = Agent(input_dims=env.observation_space.shape, env=env,
         n_actions=env.action_space.shape[0])
 score_history = []
 for i in range(n_games):
