@@ -162,11 +162,14 @@ class Metra():
 
 
     def calculate_skill(self, state, goal_state):
-        state = torch.tensor(state)
-        goal_state = torch.tensor(goal_state)
-        num = (self.phi(goal_state) - self.phi(state))
-        den = torch.norm(self.phi(goal_state) - self.phi(state), dim=1)
-        return num/den
+        state = torch.tensor(state, dtype=torch.float).to(self.device)
+        goal_state = torch.tensor(goal_state, dtype=torch.float).to(self.device)
+        diff = self.phi(goal_state) - self.phi(state)
+        if len(diff.shape) == 1:
+            den = torch.norm(diff, dim=0)  
+        else:
+            den = torch.norm(diff, dim=1)  
+        return diff / den if den != 0 else diff 
 
     def generate_goal(self, x, y, current_observation):
         goal_x = np.random.uniform(low=x-7.5, high=x+7.5)
@@ -174,19 +177,15 @@ class Metra():
         print((goal_x, goal_y))
         current_observation[-1] = goal_x
         current_observation[-2] = goal_y
-        return current_observation
+        # current_observation[-1] = 7
+        # current_observation[-2] = 7
+        return current_observation, goal_x, goal_y
     
     def test_skills(self):
         self.agent.load_models()
         self.phi.load_checkpoint()
         observation = self.env.reset()
-        z = self.calculate_skill(observation, observation)
-        exit()
-        print("---------------------------")
-
-        print(observation[-1])
-        goal_state = self.generate_goal(0,0, observation)
-        
+        goal_state, goal_x, goal_y = self.generate_goal(0,0, observation)
         z = self.calculate_skill(observation, goal_state)
         done = False
         while not done:
@@ -194,5 +193,11 @@ class Metra():
             action = self.agent.choose_action(observation, z)
             observation_, reward, done, info = self.env.step(action)
             observation_ = torch.tensor(observation_, dtype=torch.float).to(self.device)
+            goal_pos = np.array([goal_x, goal_y])
+            current_pos = np.array([info['x_position'], info['y_position']])
+            distance = np.linalg.norm(goal_pos - current_pos)
+            if distance <= 3:
+                print("GOAL REACHED")
+                exit()
 
     

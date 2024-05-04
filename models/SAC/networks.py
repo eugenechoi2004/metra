@@ -41,7 +41,7 @@ class CriticNetwork(nn.Module):
         T.save(self.state_dict(), self.checkpoint_file)
 
     def load_checkpoint(self):
-        self.load_state_dict(T.load(self.checkpoint_file))
+        self.load_state_dict(T.load(self.checkpoint_file, map_location=self.device))
 
 class Phi(nn.Module):
     def __init__(self, state_dim, z_dim, lr, hidden_layer = 256, name='phi', chkpt_dir='tmp/sac') -> None:
@@ -66,7 +66,7 @@ class Phi(nn.Module):
         T.save(self.state_dict(), self.checkpoint_file)
 
     def load_checkpoint(self):
-        self.load_state_dict(T.load(self.checkpoint_file))
+        self.load_state_dict(T.load(self.checkpoint_file, map_location=self.device))
 
 
 class ValueNetwork(nn.Module):
@@ -103,7 +103,8 @@ class ValueNetwork(nn.Module):
         T.save(self.state_dict(), self.checkpoint_file)
 
     def load_checkpoint(self):
-        self.load_state_dict(T.load(self.checkpoint_file))
+        self.load_state_dict(T.load(self.checkpoint_file, map_location=self.device))
+
 
 class ActorNetwork(nn.Module):
     def __init__(self, alpha, input_dims, max_action, fc1_dims=256, 
@@ -163,4 +164,4 @@ class ActorNetwork(nn.Module):
         T.save(self.state_dict(), self.checkpoint_file)
 
     def load_checkpoint(self):
-        self.load_state_dict(T.load(self.checkpoint_file))
+        self.load_state_dict(T.load(self.checkpoint_file, map_location=self.device))
