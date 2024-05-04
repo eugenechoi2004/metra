@@ -111,7 +111,7 @@ class ActorNetwork(nn.Module):
         self.max_action = max_action
         self.reparam_noise = 1e-6
 
-        self.fc1 = nn.Linear(*self.input_dims + z_dim, self.fc1_dims)
+        self.fc1 = nn.Linear((self.input_dims[0] + z_dim), self.fc1_dims)
         self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
         self.mu = nn.Linear(self.fc2_dims, self.n_actions)
         self.sigma = nn.Linear(self.fc2_dims, self.n_actions)
@@ -122,7 +122,9 @@ class ActorNetwork(nn.Module):
         self.to(self.device)
 
     def forward(self, state, z):
-        prob = self.fc1(T.cat([state, z], dim=1))
+        z_expanded = z.unsqueeze(0).repeat(state.size(0), 1)
+        arr = T.cat([state, z_expanded], dim =1)
+        prob = self.fc1(T.cat([state, z_expanded], dim=1))
         prob = F.relu(prob)
         prob = self.fc2(prob)
         prob = F.relu(prob)
