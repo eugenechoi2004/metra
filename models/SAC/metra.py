@@ -42,6 +42,7 @@ class Metra():
             observation = self.env.reset()
             z = self.sample_skill()
             while not done:
+                self.env.render(mode='human')
                 action = self.agent.choose_action(observation, z)
                 observation_, reward, done, _ = self.env.step(action)
                 self.agent.remember(observation, action, reward, observation_, done, z)
