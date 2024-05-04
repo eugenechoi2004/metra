@@ -22,5 +22,5 @@ metra = Metra(**args)
 
 # metra.run_loaded_model(78.6042)
 
-trajectories = metra.locomotion_metric(48)
+trajectories = metra.locomotion_metric(100)
 metra.plot_trajectories(trajectories)

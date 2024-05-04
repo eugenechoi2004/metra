@@ -122,6 +122,8 @@ class Metra():
         penalty_term = min(epsilon, 1 - norm_diff)
         return lambda_param * penalty_term
     
+    # metrics
+
     def locomotion_metric(self, n_skills=48):
         trajectories = []
         self.agent.load_models()
@@ -160,10 +162,37 @@ class Metra():
 
 
     def calculate_skill(self, state, goal_state):
-        return (self.phi(goal_state) - self.phi(state))/torch.norm(self.phi(goal_state) - self.phi(state), dim=1)
+        state = torch.tensor(state)
+        goal_state = torch.tensor(goal_state)
+        num = (self.phi(goal_state) - self.phi(state))
+        den = torch.norm(self.phi(goal_state) - self.phi(state), dim=1)
+        return num/den
 
+    def generate_goal(self, x, y, current_observation):
+        goal_x = np.random.uniform(low=x-7.5, high=x+7.5)
+        goal_y = np.random.uniform(low=y-7.5, high=y+7.5)
+        print((goal_x, goal_y))
+        current_observation[-1] = goal_x
+        current_observation[-2] = goal_y
+        return current_observation
+    
+    def test_skills(self):
+        self.agent.load_models()
+        self.phi.load_checkpoint()
+        observation = self.env.reset()
+        z = self.calculate_skill(observation, observation)
+        exit()
+        print("---------------------------")
 
-
-
+        print(observation[-1])
+        goal_state = self.generate_goal(0,0, observation)
+        
+        z = self.calculate_skill(observation, goal_state)
+        done = False
+        while not done:
+            self.env.render(mode='human')
+            action = self.agent.choose_action(observation, z)
+            observation_, reward, done, info = self.env.step(action)
+            observation_ = torch.tensor(observation_, dtype=torch.float).to(self.device)
 
     
