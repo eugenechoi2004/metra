@@ -13,13 +13,13 @@ class Metra():
         self.n_epochs = kwargs['n_epochs']
         self.batch_size = kwargs['batch_size']
         self.env_name = kwargs['env_name']
-        self.env = gym.make(self.env_name)
+        self.env = gym.make(self.env_name, exclude_current_positions_from_observation=False)
         self.agent = Agent(input_dims=self.env.observation_space.shape, env=self.env,
                            n_actions=self.env.action_space.shape[0])
         self.lr = kwargs['lr']
         self.state_dim = self.env.observation_space.shape[0]
-        self.phi = Phi(self.state_dim, self.latent_dim, self.lr)
-        self.lamb = torch.tensor(kwargs['lamb'], requires_grad=True)
+        self.phi = Phi(self.state_dim, self.latent_dim, self.lr).to(self.device)
+        self.lamb = torch.tensor(kwargs['lamb'], requires_grad=True).to(self.device)
         self.epsilon = kwargs['epsilon']
         self.grad_steps_per_epoch = kwargs['grad_steps_per_epoch']
         self.minibatch_size = kwargs['minibatch_size']
@@ -31,19 +31,21 @@ class Metra():
 
     def sample_skill(self):
         skill_sample = self.z_dist.sample((self.latent_dim,))
-        return skill_sample
+        return skill_sample.to(self.device)
 
     def train(self):
         for epoch in range(self.n_epochs):
             phi_losses = []
             lambda_losses = []
             done = False
-            observation = self.env.reset()
+            observation = torch.tensor(self.env.reset(), dtype=torch.float).to(self.device)
             z = self.sample_skill()
             while not done:
                 self.env.render(mode='human')
                 action = self.agent.choose_action(observation, z)
                 observation_, reward, done, _ = self.env.step(action)
+                observation_ = torch.tensor(observation_, dtype=torch.float).to(self.device)
+
                 self.agent.remember(observation, action, reward, observation_, done, z)
             
             for i in range(self.grad_steps_per_epoch):
