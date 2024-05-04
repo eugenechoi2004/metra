@@ -128,6 +128,7 @@ class Metra():
         trajectories = []
         self.agent.load_models()
         self.phi.load_checkpoint()
+        self.env._max_episode_steps = 10_000
         for i in range(n_skills):
             print(i)
             trajectory = []
@@ -184,6 +185,7 @@ class Metra():
     def test_skills(self):
         self.agent.load_models()
         self.phi.load_checkpoint()
+        self.env._max_episode_steps = 100000
         observation = self.env.reset()
         goal_state, goal_x, goal_y = self.generate_goal(0,0, observation)
         z = self.calculate_skill(observation, goal_state)
@@ -198,6 +200,10 @@ class Metra():
             distance = np.linalg.norm(goal_pos - current_pos)
             if distance <= 3:
                 print("GOAL REACHED")
-                exit()
+                goal_state, goal_x, goal_y = self.generate_goal(info['x_position'],info['y_position'], observation)
+                z = self.calculate_skill(observation, goal_state)
+
+
+            
 
     
