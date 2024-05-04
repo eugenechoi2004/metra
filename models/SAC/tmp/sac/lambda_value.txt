@@ -1,1 +1,1 @@
-tensor(30.0709, requires_grad=True)
+tensor(29.9950, requires_grad=True)

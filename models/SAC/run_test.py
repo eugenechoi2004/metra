@@ -8,7 +8,7 @@ args = {
     "latent_low": -1,
     "latent_high": 1,
     "latent_dim": 2,
-    "n_epochs": 50,
+    "n_epochs": 100,
     "batch_size": 256,
     "env_name": "Ant-v4",
     "lamb": 30.0,
@@ -19,7 +19,6 @@ args = {
     "checkpoint_epoch":50,
 }
 metra = Metra(**args)
-metra.train()
 
 metra.run_loaded_model(78.6042)
 

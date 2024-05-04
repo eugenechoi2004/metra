@@ -93,6 +93,8 @@ class Metra():
         self.lamb = lamb
         observation = self.env.reset()
         z = self.sample_skill()
+        z[0] = -1
+        z[1] = 1
         done = False
         while not done:
             self.env.render(mode='human')
@@ -116,7 +118,7 @@ class Metra():
     def lambda_loss_fn(self, s, s_prime, lambda_param, epsilon):
         norm_diff = torch.norm(self.phi(s_prime) - self.phi(s))**2
         penalty_term = min(epsilon, 1 - norm_diff)
-        return -lambda_param * penalty_term
+        return lambda_param * penalty_term
     
     # metric functions
     def locomotion_metric(self, n_skills=48):
