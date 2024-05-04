@@ -70,18 +70,9 @@ class Agent():
         self.critic_1.load_checkpoint()
         self.critic_2.load_checkpoint()
 
-    def learn(self):
+    def learn(self, reward, done, state_, state, action):
         if self.memory.mem_cntr < self.batch_size:
             return
-
-        state, action, reward, new_state, done = \
-                self.memory.sample_buffer(self.batch_size)
-
-        reward = T.tensor(reward, dtype=T.float).to(self.actor.device)
-        done = T.tensor(done).to(self.actor.device)
-        state_ = T.tensor(new_state, dtype=T.float).to(self.actor.device)
-        state = T.tensor(state, dtype=T.float).to(self.actor.device)
-        action = T.tensor(action, dtype=T.float).to(self.actor.device)
 
         value = self.value(state).view(-1)
         value_ = self.target_value(state_).view(-1)

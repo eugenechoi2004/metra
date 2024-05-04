@@ -18,12 +18,15 @@ class Metra():
         self.state_dim = self.env.observation_space.shape[0]
         self.phi = Phi(self.state_dim, self.latent_dim, self.lr )
         self.lamb = torch.tensor(kwargs.lamb,requires_grad=True)
-        
+        self.epsilon = kwargs.epsilon
         self.grad_steps_per_epoch = kwargs.grad_steps_per_epoch
         self.minibatch_size = kwargs.minibatch_size
 
         #optimizers
         self.lambda_optimizer = optim.Adam([self.lambda_param], lr=self.lr)
+
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
 
     def sample_skill(self):
         skill_sample = self.z_dist.sample((self.latent_dim,))
@@ -42,8 +45,37 @@ class Metra():
             for _ in range(self.grad_steps_per_epoch):
                 if self.agent.memory.mem_cntr < self.batch_size:
                     continue
+
+                states, actions, _, next_states, dones, skills = self.agent.memory.sample_buffer(self.minibatch_size)
+                states, next_states = states.float(), next_states.float()
+                skills = skills.float()
+
+                dones = torch.tensor(dones).to(self.device)
+                next_states = torch.tensor(next_states, dtype=torch.float).to(self.device)
+                states = torch.tensor(states, dtype=torch.float).to(self.device)
+                actions = torch.tensor(actions, dtype=torch.float).to(self.device)
+                # reward = torch.tensor(reward, dtype=torch.float).to(self.device)
+                skills = torch.tensor(skills, dtype=torch.float).to(self.device)
+
+                phi_loss_value = self.phi_loss(states, next_states, skills, self.epsilon)
+                self.phi.phi_optimizer.zero_grad()
+                phi_loss_value.backward()
+                self.phi.phi_optimizer.step()
+
+                lambda_loss_value = self.lambda_loss_fn(states, next_states, self.lamb, self.epsilon)
+                self.lambda_optimizer.zero_grad()
+                lambda_loss_value.backward()
+                self.lambda_optimizer.step()
+
+                #calculate rewards 
+                rewards = self.reward(states, next_states, skills)
+                self.agent.learn()
                 
-                states, actions, rewards, next_states, dones, skills = self.replay_buffer.sample(self.minibatch_size)
+
+    def reward(self, s, s_prime, z):
+        diff = self.phi(s_prime) - self.phi(s)
+        return torch.einsum('ij,ij->i', diff, z)
+
 
 
     def phi_loss(self, s, s_prime, z, epsilon):
@@ -58,10 +90,7 @@ class Metra():
         penalty_term = min(epsilon, 1 - norm_diff)
         return -lambda_param * penalty_term
 
-    def reward(self, s, s_prime, z):
-        diff = self.phi(s_prime) - self.phi(s)
-        return torch.dot(diff, torch.tensor(z).float())
-
+    
 
 args = {
     "latent_low": -1,
@@ -73,5 +102,6 @@ args = {
     "lamb": 30,
     "lr":0.0001,
     "grad_steps_per_epoch":50,
-    "minibatch_size":256
+    "minibatch_size":256,
+    "epsilon":0.001
 }
