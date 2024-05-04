@@ -44,7 +44,7 @@ class CriticNetwork(nn.Module):
         self.load_state_dict(T.load(self.checkpoint_file))
 
 class Phi(nn.Module):
-    def __init__(self, state_dim, z_dim, lr, hidden_layer = 256) -> None:
+    def __init__(self, state_dim, z_dim, lr, hidden_layer = 256, name='phi', chkpt_dir='tmp/sac') -> None:
         super(Phi, self).__init__()
         self.model = nn.Sequential(
             nn.Linear(state_dim, hidden_layer),
@@ -55,10 +55,18 @@ class Phi(nn.Module):
         )
         self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
         self.phi_optimizer = optim.Adam(self.parameters(), lr =lr)
+        self.checkpoint_dir = chkpt_dir
+        self.checkpoint_file = os.path.join(self.checkpoint_dir, name+'_metra')
         self.to(self.device)
 
     def forward(self, state):
         return self.model(state)
+    
+    def save_checkpoint(self):
+        T.save(self.state_dict(), self.checkpoint_file)
+
+    def load_checkpoint(self):
+        self.load_state_dict(T.load(self.checkpoint_file))
 
 
 class ValueNetwork(nn.Module):

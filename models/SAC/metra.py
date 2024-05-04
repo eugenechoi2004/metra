@@ -25,6 +25,8 @@ class Metra():
         self.grad_steps_per_epoch = kwargs['grad_steps_per_epoch']
         self.minibatch_size = kwargs['minibatch_size']
 
+        self.checkpoint_epoch = kwargs['checkpoint_epoch']
+
         # Optimizers
         self.lambda_optimizer = optim.Adam([self.lamb], lr=self.lr)
         
@@ -42,7 +44,7 @@ class Metra():
             observation = self.env.reset()
             z = self.sample_skill()
             while not done:
-                self.env.render(mode='human')
+                # self.env.render(mode='human')
                 action = self.agent.choose_action(observation, z)
                 observation_, reward, done, _ = self.env.step(action)
                 observation_ = torch.tensor(observation_, dtype=torch.float).to(self.device)
@@ -52,7 +54,6 @@ class Metra():
             for i in range(self.grad_steps_per_epoch):
                 if self.agent.memory.mem_cntr < self.batch_size:
                     continue
-
                 states, actions, _, next_states, dones, skills = self.agent.memory.sample_buffer(self.minibatch_size)
 
                 dones = torch.tensor(dones).to(self.device)
@@ -76,12 +77,19 @@ class Metra():
                 #calculate rewards 
                 rewards = self.reward(states, next_states, skills)
                 self.agent.learn(rewards, dones, next_states, states, actions, skills)
-
+            
 
             avg_phi_loss = np.mean(phi_losses)
             avg_lambda_loss = np.mean(lambda_losses)
             print(f"Epoch {epoch + 1}/{self.n_epochs}, "
                     f"Avg Phi Loss: {avg_phi_loss:.4f}, Avg Lambda Loss: {avg_lambda_loss:.4f}")
+        
+            if epoch % self.checkpoint_epoch == 0:
+                self.agent.save_models()
+                self.phi.save_checkpoint()
+                with open("tmp/sac/lambda_value.txt", "w") as file:
+                    file.write(str(self.lamb))
+
 
 
     def reward(self, s, s_prime, z):
@@ -97,27 +105,9 @@ class Metra():
         return -(term1 + term2)
 
 
-
     def lambda_loss_fn(self, s, s_prime, lambda_param, epsilon):
         norm_diff = torch.norm(self.phi(s_prime) - self.phi(s))**2
         penalty_term = min(epsilon, 1 - norm_diff)
         return -lambda_param * penalty_term
 
     
-
-args = {
-    "latent_low": -1,
-    "latent_high": 1,
-    "latent_dim": 2,
-    "n_epochs": 1000,
-    "batch_size": 256,
-    "env_name": "Ant-v4",
-    "lamb": 30.0,
-    "lr":0.0001,
-    "grad_steps_per_epoch":50,
-    "minibatch_size":256,
-    "epsilon":0.001
-}
-
-metra = Metra(**args)
-metra.train()

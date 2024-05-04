@@ -62,6 +62,7 @@ class Agent():
         self.target_value.save_checkpoint()
         self.critic_1.save_checkpoint()
         self.critic_2.save_checkpoint()
+        
 
     def load_models(self):
         print('.... loading models ....')
