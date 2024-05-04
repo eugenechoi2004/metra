@@ -35,8 +35,8 @@ class Agent():
         return actions.cpu().detach().numpy()[0]
     
 
-    def remember(self, state, action, reward, new_state, done):
-        self.memory.store_transition(state, action, reward, new_state, done)
+    def remember(self, state, action, reward, new_state, done, z):
+        self.memory.store_transition(state, action, reward, new_state, done, z)
 
     def update_network_parameters(self, tau=None):
         if tau is None:

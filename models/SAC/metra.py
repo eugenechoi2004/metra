@@ -19,10 +19,11 @@ class Metra():
         self.phi = Phi(self.state_dim, self.latent_dim, self.lr )
         self.lamb = torch.tensor(kwargs.lamb,requires_grad=True)
         
+        self.grad_steps_per_epoch = kwargs.grad_steps_per_epoch
+        self.minibatch_size = kwargs.minibatch_size
+
         #optimizers
         self.lambda_optimizer = optim.Adam([self.lambda_param], lr=self.lr)
-        
-
 
     def sample_skill(self):
         skill_sample = self.z_dist.sample((self.latent_dim,))
@@ -35,8 +36,15 @@ class Metra():
             z = self.sample_skill()
             while not done:
                 action = self.agent.choose_action(observation, z)
-                observation_, reward, done, info = self.env.step(action)
-                self.agent.remember(observation, action, reward, observation_, done)
+                observation_, reward, done, _ = self.env.step(action)
+                self.agent.remember(observation, action, reward, observation_, done, z)
+            
+            for _ in range(self.grad_steps_per_epoch):
+                if self.agent.memory.mem_cntr < self.batch_size:
+                    continue
+                
+                states, actions, rewards, next_states, dones, skills = self.replay_buffer.sample(self.minibatch_size)
+
 
     def phi_loss(self, s, s_prime, z, epsilon):
         diff = self.phi(s_prime) - self.phi(s) 
@@ -63,5 +71,7 @@ args = {
     "batch_size": 256,
     "env_name": "Ant-v4",
     "lamb": 30,
-    "lr":0.0001
+    "lr":0.0001,
+    "grad_steps_per_epoch":50,
+    "minibatch_size":256
 }
