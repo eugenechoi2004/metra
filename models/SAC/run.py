@@ -16,3 +16,6 @@ args = {
 }
 metra = Metra(**args)
 metra.train()
+
+metra_image = Image.debian_slim(python_version="3.10.9").pip_install_from_requirements("requirement.txt")
+
