@@ -4,6 +4,8 @@ import gym
 from sac_torch import Agent
 from networks import Phi
 import torch.optim as optim
+import numpy as np
+
 class Metra():
     def __init__(self, **kwargs):
         self.z_dist = Uniform(low=kwargs['latent_low'], high=kwargs['latent_high'])
@@ -34,6 +36,8 @@ class Metra():
     def train(self):
         print("starting training")
         for epoch in range(self.n_epochs):
+            phi_losses = []
+            lambda_losses = []
             done = False
             observation = self.env.reset()
             z = self.sample_skill()
@@ -42,7 +46,7 @@ class Metra():
                 observation_, reward, done, _ = self.env.step(action)
                 self.agent.remember(observation, action, reward, observation_, done, z)
             
-            for _ in range(self.grad_steps_per_epoch):
+            for i in range(self.grad_steps_per_epoch):
                 if self.agent.memory.mem_cntr < self.batch_size:
                     continue
 
@@ -58,35 +62,35 @@ class Metra():
                 self.phi.phi_optimizer.zero_grad()
                 phi_loss_value.backward()
                 self.phi.phi_optimizer.step()
+                phi_losses.append(phi_loss_value.item())
 
                 lambda_loss_value = self.lambda_loss_fn(states, next_states, self.lamb, self.epsilon)
                 self.lambda_optimizer.zero_grad()
                 lambda_loss_value.backward()
                 self.lambda_optimizer.step()
+                lambda_losses.append(lambda_loss_value.item())
 
                 #calculate rewards 
                 rewards = self.reward(states, next_states, skills)
                 self.agent.learn(rewards, dones, next_states, states, actions, skills)
-                
+
+
+            avg_phi_loss = np.mean(phi_losses)
+            avg_lambda_loss = np.mean(lambda_losses)
+            print(f"Epoch {epoch + 1}/{self.n_epochs}, "
+                    f"Avg Phi Loss: {avg_phi_loss:.4f}, Avg Lambda Loss: {avg_lambda_loss:.4f}")
+
 
     def reward(self, s, s_prime, z):
         diff = self.phi(s_prime) - self.phi(s)
         return torch.einsum('ij,ij->i', diff, z)
 
     def phi_loss(self, s, s_prime, z, epsilon):
-        # Calculate the difference in the representations of states
         diff = self.phi(s_prime) - self.phi(s)
-
-        # Calculate the dot product in batch
         term1 = torch.einsum('ij,ij->i', diff, z).mean()
-
-        # Calculate the norm difference in batch
         norm_diff = torch.norm(diff, dim=1)
-
-        # Apply the epsilon condition using torch.clamp
         penalty = torch.clamp(1 - norm_diff ** 2, min=epsilon)
         term2 = self.lamb * penalty.mean()
-
         return -(term1 + term2)
 
 
@@ -102,7 +106,7 @@ args = {
     "latent_low": -1,
     "latent_high": 1,
     "latent_dim": 2,
-    "n_epochs": 500,
+    "n_epochs": 1000,
     "batch_size": 256,
     "env_name": "Ant-v4",
     "lamb": 30.0,

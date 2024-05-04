@@ -122,9 +122,10 @@ class ActorNetwork(nn.Module):
         self.to(self.device)
 
     def forward(self, state, z):
-        z_expanded = z.unsqueeze(0).repeat(state.size(0), 1)
-        arr = T.cat([state, z_expanded], dim =1)
-        prob = self.fc1(T.cat([state, z_expanded], dim=1))
+        if z.dim() == 1:
+            z = z.unsqueeze(0)
+
+        prob = self.fc1(T.cat([state, z], dim=1))
         prob = F.relu(prob)
         prob = self.fc2(prob)
         prob = F.relu(prob)

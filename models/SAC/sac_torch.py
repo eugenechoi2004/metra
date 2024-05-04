@@ -70,7 +70,7 @@ class Agent():
         self.critic_1.load_checkpoint()
         self.critic_2.load_checkpoint()
 
-    def learn(self, reward, done, state_, state, action,z):
+    def learn(self, reward, done, state_, state, action, z):
         if self.memory.mem_cntr < self.batch_size:
             return
 
@@ -91,7 +91,7 @@ class Agent():
         value_loss.backward(retain_graph=True)
         self.value.optimizer.step()
 
-        actions, log_probs = self.actor.sample_normal(state, reparameterize=True)
+        actions, log_probs = self.actor.sample_normal(state, z, reparameterize=True)
         log_probs = log_probs.view(-1)
         q1_new_policy = self.critic_1.forward(state, actions)
         q2_new_policy = self.critic_2.forward(state, actions)
