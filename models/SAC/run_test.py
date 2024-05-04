@@ -20,19 +20,7 @@ args = {
 }
 metra = Metra(**args)
 
-metra.run_loaded_model(78.6042)
+# metra.run_loaded_model(78.6042)
 
-# trajectories = metra.locomotion_metric()
-# trajectories_np = np.array(trajectories)
-
-# cmap = ListedColormap(['white', 'blue'])
-
-# # Plot the trajectories matrix
-# plt.figure(figsize=(8, 8))
-# plt.imshow(trajectories_np, cmap=cmap, interpolation='nearest')
-# plt.colorbar() 
-# plt.xlabel('X Position')
-# plt.ylabel('Y Position')
-# plt.title('Agent Trajectories')
-# plt.grid(False)
-# plt.show()
+trajectories = metra.locomotion_metric(48)
+metra.plot_trajectories(trajectories)

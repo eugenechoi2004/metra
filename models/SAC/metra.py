@@ -5,6 +5,8 @@ from sac_torch import Agent
 from networks import Phi
 import torch.optim as optim
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 
 class Metra():
     def __init__(self, **kwargs):
@@ -120,26 +122,42 @@ class Metra():
         penalty_term = min(epsilon, 1 - norm_diff)
         return lambda_param * penalty_term
     
-    # metric functions
     def locomotion_metric(self, n_skills=48):
-        trajectories = [[0]*50 for _ in range(50)]
+        trajectories = []
         self.agent.load_models()
         self.phi.load_checkpoint()
         for i in range(n_skills):
             print(i)
+            trajectory = []
             skill = self.sample_skill()
             observation = self.env.reset()
             done = False
             while not done:
                 action = self.agent.choose_action(observation, skill)
                 observation_, reward, done, info = self.env.step(action)
-                x = torch.trunc(torch.clamp(torch.tensor(info['x_position']), min=-50, max=50)).item() + 25
-                y = torch.trunc(torch.clamp(torch.tensor(info['y_position']), min=-50, max=50)).item() + 25
-                x = int(x)
-                y = int(y)
-                trajectories[y][x] = 1
-
+                if 'x_position' in info and 'y_position' in info:
+                    x = torch.clamp(torch.tensor(info['x_position']), min=-50, max=50).item() + 25
+                    y = torch.clamp(torch.tensor(info['y_position']), min=-50, max=50).item() + 25
+                    trajectory.append((y,x))
+                else:
+                    print("Info dictionary missing position data")
+                    done = True 
+            trajectories.append(trajectory)
         return trajectories
+
+    def plot_trajectories(self, trajectories):
+        plt.figure(figsize=(10, 8))
+        cmap = cm.get_cmap('tab10', len(trajectories))  
+        for i, trajectory in enumerate(trajectories):
+            if trajectory:
+                y_coords, x_coords = zip(*trajectory)
+                plt.plot(x_coords, y_coords, color=cmap(i), linestyle='-', linewidth=0.5) 
+        plt.xlabel('X Position')
+        plt.ylabel('Y Position')
+        plt.title('Locomotion Trajectories')
+        plt.grid(True)
+        plt.show()
+
 
     def calculate_skill(self, state, goal_state):
         return (self.phi(goal_state) - self.phi(state))/torch.norm(self.phi(goal_state) - self.phi(state), dim=1)
