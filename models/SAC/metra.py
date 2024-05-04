@@ -34,7 +34,6 @@ class Metra():
         return skill_sample
 
     def train(self):
-        print("starting training")
         for epoch in range(self.n_epochs):
             phi_losses = []
             lambda_losses = []
