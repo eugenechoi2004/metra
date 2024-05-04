@@ -139,6 +139,9 @@ class Metra():
 
         return trajectories
 
+    def calculate_skill(self, state, goal_state):
+        return (self.phi(goal_state) - self.phi(state))/torch.norm(self.phi(goal_state) - self.phi(state), dim=1)
+
 
 
 
