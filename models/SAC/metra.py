@@ -54,7 +54,6 @@ class Metra():
                 next_states = torch.tensor(next_states, dtype=torch.float).to(self.device)
                 states = torch.tensor(states, dtype=torch.float).to(self.device)
                 actions = torch.tensor(actions, dtype=torch.float).to(self.device)
-                # reward = torch.tensor(reward, dtype=torch.float).to(self.device)
                 skills = torch.tensor(skills, dtype=torch.float).to(self.device)
 
                 phi_loss_value = self.phi_loss(states, next_states, skills, self.epsilon)
@@ -69,14 +68,12 @@ class Metra():
 
                 #calculate rewards 
                 rewards = self.reward(states, next_states, skills)
-                self.agent.learn()
+                self.agent.learn(rewards, dones, next_states, states, actions)
                 
 
     def reward(self, s, s_prime, z):
         diff = self.phi(s_prime) - self.phi(s)
         return torch.einsum('ij,ij->i', diff, z)
-
-
 
     def phi_loss(self, s, s_prime, z, epsilon):
         diff = self.phi(s_prime) - self.phi(s) 
