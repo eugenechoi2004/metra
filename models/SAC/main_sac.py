@@ -45,3 +45,4 @@ if __name__ == '__main__':
     if not load_checkpoint:
         x = [i+1 for i in range(n_games)]
         plot_learning_curve(x, score_history, figure_file)
+

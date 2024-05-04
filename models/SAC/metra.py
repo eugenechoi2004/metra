@@ -26,11 +26,8 @@ class Metra():
         self.minibatch_size = kwargs['minibatch_size']
 
         self.checkpoint_epoch = kwargs['checkpoint_epoch']
-
         # Optimizers
         self.lambda_optimizer = optim.Adam([self.lamb], lr=self.lr)
-        
-
 
     def sample_skill(self):
         skill_sample = self.z_dist.sample((self.latent_dim,))
@@ -90,7 +87,19 @@ class Metra():
                 with open("tmp/sac/lambda_value.txt", "w") as file:
                     file.write(str(self.lamb))
 
-
+    def run_loaded_model(self, lamb):
+        self.agent.load_models()
+        self.phi.load_checkpoint()
+        self.lamb = lamb
+        observation = self.env.reset()
+        z = self.sample_skill()
+        done = False
+        while not done:
+            self.env.render(mode='human')
+            action = self.agent.choose_action(observation, z)
+            observation_, reward, done, info = self.env.step(action)
+            
+            observation_ = torch.tensor(observation_, dtype=torch.float).to(self.device)
 
     def reward(self, s, s_prime, z):
         diff = self.phi(s_prime) - self.phi(s)
@@ -103,11 +112,35 @@ class Metra():
         penalty = torch.clamp(1 - norm_diff ** 2, min=epsilon)
         term2 = self.lamb * penalty.mean()
         return -(term1 + term2)
-
-
+    
     def lambda_loss_fn(self, s, s_prime, lambda_param, epsilon):
         norm_diff = torch.norm(self.phi(s_prime) - self.phi(s))**2
         penalty_term = min(epsilon, 1 - norm_diff)
         return -lambda_param * penalty_term
+    
+    # metric functions
+    def locomotion_metric(self, n_skills=48):
+        trajectories = [[0]*50 for _ in range(50)]
+        self.agent.load_models()
+        self.phi.load_checkpoint()
+        for i in range(n_skills):
+            print(i)
+            skill = self.sample_skill()
+            observation = self.env.reset()
+            done = False
+            while not done:
+                action = self.agent.choose_action(observation, skill)
+                observation_, reward, done, info = self.env.step(action)
+                x = torch.trunc(torch.clamp(torch.tensor(info['x_position']), min=-50, max=50)).item() + 25
+                y = torch.trunc(torch.clamp(torch.tensor(info['y_position']), min=-50, max=50)).item() + 25
+                x = int(x)
+                y = int(y)
+                trajectories[y][x] = 1
+
+        return trajectories
+
+
+
+
 
     
