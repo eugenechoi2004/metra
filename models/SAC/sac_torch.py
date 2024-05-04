@@ -30,6 +30,7 @@ class Agent():
 
     def choose_action(self, observation, z):
         state = T.Tensor([observation]).to(self.actor.device)
+        z = z.to(self.actor.device)
         actions, _ = self.actor.sample_normal(state, z, reparameterize=False)
 
         return actions.cpu().detach().numpy()[0]

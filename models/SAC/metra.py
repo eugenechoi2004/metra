@@ -13,6 +13,7 @@ class Metra():
         self.n_epochs = kwargs['n_epochs']
         self.batch_size = kwargs['batch_size']
         self.env_name = kwargs['env_name']
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.env = gym.make(self.env_name, exclude_current_positions_from_observation=False)
         self.agent = Agent(input_dims=self.env.observation_space.shape, env=self.env,
                            n_actions=self.env.action_space.shape[0])
@@ -26,7 +27,7 @@ class Metra():
 
         # Optimizers
         self.lambda_optimizer = optim.Adam([self.lamb], lr=self.lr)
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        
 
 
     def sample_skill(self):
@@ -38,7 +39,7 @@ class Metra():
             phi_losses = []
             lambda_losses = []
             done = False
-            observation = torch.tensor(self.env.reset(), dtype=torch.float).to(self.device)
+            observation = self.env.reset()
             z = self.sample_skill()
             while not done:
                 self.env.render(mode='human')
