@@ -21,7 +21,12 @@ contourpy==1.2.1
 cycler==0.12.1
 Cython==0.29.23
 decorator==4.4.2
+dm-control2gym==0.0.2
+dm-env==1.6
+dm-tree==0.1.8
+dm_control==1.0.18
 docker-pycreds==0.4.0
+etils==1.7.0
 exceptiongroup==1.2.1
 executing==2.0.1
 Farama-Notifications==0.0.4
@@ -45,11 +50,14 @@ hyperframe==6.0.1
 idna==3.7
 imageio==2.34.1
 imageio-ffmpeg==0.4.9
+importlib_resources==6.4.0
 -e git+https://github.com/seohongpark/METRA.git@e08e76290ca7db7ecd0b4a0752383a17a7a536e4#egg=iod
 ipython==8.24.0
 jedi==0.19.1
 Jinja2==3.1.3
 kiwisolver==1.4.5
+labmaze==1.0.6
+lxml==5.2.1
 Markdown==3.6
 markdown-it-py==3.0.0
 MarkupSafe==2.1.5
@@ -59,10 +67,11 @@ mdurl==0.1.2
 modal==0.62.116
 moviepy==1.0.3
 mpmath==1.3.0
-mujoco==2.2.0
+mujoco==3.1.4
 multidict==6.0.5
 networkx==3.3
 numpy==1.26.4
+opencv-python==4.9.0.80
 packaging==24.0
 pandas==2.2.2
 parso==0.8.4
@@ -78,6 +87,7 @@ pybullet==3.2.6
 pycparser==2.22
 pydantic==2.7.1
 pydantic_core==2.18.2
+pyglet==2.0.15
 Pygments==2.17.2
 PyOpenGL==3.1.7
 pyparsing==3.1.2
@@ -120,3 +130,4 @@ watchfiles==0.21.0
 wcwidth==0.2.13
 Werkzeug==3.0.2
 yarl==1.9.4
+zipp==3.18.1
