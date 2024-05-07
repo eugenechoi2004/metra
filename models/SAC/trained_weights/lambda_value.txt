@@ -1,0 +1,1 @@
+tensor(29.7707, device='cuda:0', requires_grad=True)
