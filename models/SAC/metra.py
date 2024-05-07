@@ -64,9 +64,9 @@ class Metra():
         return skill_sample.to(self.device)
 
     def train(self):
-        # self.agent.load_models()
-        # self.phi.load_checkpoint()
-        # self.lamb = torch.tensor(21.8182, requires_grad=True, device=self.device)
+        self.agent.load_models()
+        self.phi.load_checkpoint()
+        self.lamb = torch.tensor(21.8182, requires_grad=True, device=self.device)
         for epoch in range(self.n_epochs + 1):
             phi_losses = []
             lambda_losses = []
@@ -135,7 +135,7 @@ class Metra():
 
     def reward(self, s, s_prime, z):
         diff = self.phi(s_prime) - self.phi(s)
-        return torch.einsum('ij,ij->i', diff, z)
+        return torch.einsum('ij,ij->i', diff, z)    
 
     def phi_loss(self, s, s_prime, z, epsilon):
         diff = self.phi(s_prime) - self.phi(s)
@@ -158,7 +158,7 @@ class Metra():
         trajectories = []
         self.agent.load_models()
         self.phi.load_checkpoint()
-        self.env._max_episode_steps = 10000
+        self.env._max_episode_steps = 1000
         for i in range(n_skills):
             print(i)
             trajectory = []
@@ -170,7 +170,7 @@ class Metra():
                 observation_, reward, done, info = self.env.step(action)
                 visited.add((int(info['x_position']), int(info['y_position'])))
                 visited_states.append(len(visited))
-                if 'x_position' in info and 'y_position' in info:
+                if 'x_position' in info and 'y_position' in info and observation_[2] > 0.3:
                     x = torch.clamp(torch.tensor(info['x_position']), min=-50, max=50).item()
                     y = torch.clamp(torch.tensor(info['y_position']), min=-50, max=50).item()
                     trajectory.append((y,x))
@@ -183,7 +183,7 @@ class Metra():
         trajectories = []
         self.agent.load_models()
         self.phi.load_checkpoint()
-        self.env._max_episode_steps = 2500
+        self.env._max_episode_steps = 5000
         for i in range(16):
             print(i)
             trajectory = []
@@ -205,7 +205,7 @@ class Metra():
                 y_coords, x_coords = zip(*trajectory)
                 plt.plot(x_coords, y_coords, color=cmap(i), linestyle='-', linewidth=0.5) 
         plt.xlabel('X Position')
-        plt.ylabel('Y Position')
+        plt.ylabel('Skill')
         plt.axis([-25, 25, 0, 16])
         plt.title('HalfCheetah', weight='bold')
         plt.show()

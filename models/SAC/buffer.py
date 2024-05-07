@@ -1,7 +1,7 @@
 import numpy as np
 
 class ReplayBuffer():
-    def __init__(self, max_size, input_shape, n_actions):
+    def __init__(self, max_size, input_shape, n_actions, z_dim):
         self.mem_size = max_size
         self.mem_cntr = 0
         self.state_memory = np.zeros((self.mem_size, *input_shape))
@@ -9,7 +9,7 @@ class ReplayBuffer():
         self.action_memory = np.zeros((self.mem_size, n_actions))
         self.reward_memory = np.zeros(self.mem_size)
         self.terminal_memory = np.zeros(self.mem_size, dtype=np.bool_)
-        self.z_memory = np.zeros((self.mem_size , 2)) #2 because of the dimensions LOOKOUT
+        self.z_memory = np.zeros((self.mem_size , z_dim)) #2 because of the dimensions LOOKOUT
 
     def store_transition(self, state, action, reward, state_, done, z):
         index = self.mem_cntr % self.mem_size

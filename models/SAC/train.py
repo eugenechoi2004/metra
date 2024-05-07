@@ -6,22 +6,24 @@ from matplotlib.colors import ListedColormap
 
 args = {
     "latent_low": -1,
+    "discrete": True,
     "latent_high": 1,
-    "latent_dim": 2,
-    "n_epochs": 50,
+    "latent_dim": 16,
+    "n_epochs": 10_000,
     "batch_size": 256,
-    "env_name": "Ant-v4",
+    "env_name": "HalfCheetah-v4",
     "lamb": 30.0,
-    "lr":0.0001,
-    "grad_steps_per_epoch":50,
-    "minibatch_size":256,
-    "epsilon":0.001,
-    "checkpoint_epoch":50,
+    "lr": 0.0001,
+    "episode_per_epoch": 8,
+    "grad_steps_per_epoch": 50,
+    "minibatch_size": 256,
+    "epsilon": 0.001,
+    "checkpoint_epoch": 100,
+    "encoder": False,
+    "pixel": False,
 }
 metra = Metra(**args)
 metra.train()
-
-metra.run_loaded_model(78.6042)
 
 # trajectories = metra.locomotion_metric()
 # trajectories_np = np.array(trajectories)
