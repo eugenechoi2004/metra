@@ -1,7 +1,7 @@
 from torch.distributions import Normal, Categorical, Uniform
 import torch
 import gym
-from sac_torch import Agent
+from final.metra.models.SAC.agent import Agent
 from networks import Phi
 import torch.optim as optim
 import numpy as np
@@ -64,9 +64,9 @@ class Metra():
         return skill_sample.to(self.device)
 
     def train(self):
-        self.agent.load_models()
-        self.phi.load_checkpoint()
-        self.lamb = torch.tensor(21.8182, requires_grad=True, device=self.device)
+        # self.agent.load_models()
+        # self.phi.load_checkpoint()
+        # self.lamb = torch.tensor(21.8182, requires_grad=True, device=self.device)
         for epoch in range(self.n_epochs + 1):
             phi_losses = []
             lambda_losses = []
@@ -181,9 +181,11 @@ class Metra():
 
     def locomotion_metric_discrete(self):
         trajectories = []
+        visited = set()
+        visited_states = []
         self.agent.load_models()
         self.phi.load_checkpoint()
-        self.env._max_episode_steps = 5000
+        self.env._max_episode_steps = 2500
         for i in range(16):
             print(i)
             trajectory = []
@@ -194,8 +196,10 @@ class Metra():
                 observation_, reward, done, info = self.env.step(action)
                 x = torch.clamp(torch.tensor(observation_[0]), min=-50, max=50).item()
                 trajectory.append((i,x))
+                visited.add(int(x))
+                visited_states.append(len(visited))
             trajectories.append(trajectory)
-        return trajectories
+        return trajectories, visited_states
 
     def plot_trajectories(self, trajectories):
         plt.figure(figsize=(10, 10))
@@ -227,6 +231,13 @@ class Metra():
         current_observation[1] = goal_y
         return current_observation, goal_x, goal_y
     
+    def generate_goal2(self, x, y, current_observation):
+        goal_x = np.random.uniform(low=-7.5, high=7.5)
+        goal_y = np.random.uniform(low=-7.5, high=7.5)
+        current_observation[0] = goal_x
+        current_observation[1] = goal_y
+        return current_observation, goal_x, goal_y
+    
     def test_skills(self, episodes):
         self.agent.load_models()
         self.phi.load_checkpoint()
@@ -239,8 +250,7 @@ class Metra():
             goal_state, goal_x, goal_y = self.generate_goal(0, 0, observation)
             z = self.calculate_skill(observation, goal_state)
             done = False
-            for j in range(1000):
-                self.env.render(mode='human')
+            for j in range(200):
                 action = self.agent.choose_action(observation, z)
                 observation_, reward, done, info = self.env.step(action)
                 observation_ = torch.tensor(observation_, dtype=torch.float).to(self.device)
@@ -249,12 +259,49 @@ class Metra():
                 distance = np.linalg.norm(goal_pos - current_pos)
                 if distance <= 3:
                     print("reached goal")
-                    tot_rewards += 7.5
+                    tot_rewards += 2.5
                     goal_state, goal_x, goal_y = self.generate_goal(info['x_position'],info['y_position'], observation)
                     z = self.calculate_skill(observation, goal_state)
                 rewards.append(tot_rewards)
             avg_rewards.append(rewards)
         avg_rewards = np.array(avg_rewards)
         avg_rewards = avg_rewards.mean(axis=0)
-        print(avg_rewards.shape)
+        return avg_rewards
+    
+    def calculate_skill_discrete(self, state, goal_state):
+        return torch.argmax(self.phi(torch.tensor(goal_state, dtype=torch.float))-self.phi(torch.tensor(state, dtype=torch.float)))
+
+    def generate_goal_discrete(self, current_observation):
+        goal_x = np.random.randint(low=-25, high=25)
+        current_observation[0] = goal_x
+        return current_observation, goal_x
+
+    def test_skills_discrete(self, episodes):
+        self.agent.load_models()
+        self.phi.load_checkpoint()
+        avg_rewards = []
+        for i in range(200):
+            print(i)
+            rewards = []
+            tot_rewards = 0
+            observation = self.env.reset()
+            goal_state, goal_x = self.generate_goal_discrete(observation)
+            z = torch.nn.functional.one_hot(self.calculate_skill_discrete(observation, goal_state), self.latent_dim)
+            done = False
+            for j in range(1000):
+                action = self.agent.choose_action(observation, torch.tensor(z))
+                observation_, reward, done, info = self.env.step(action)
+                observation_ = torch.tensor(observation_, dtype=torch.float).to(self.device)
+                goal_pos = goal_x
+                current_pos = info['x_position']
+                distance = np.sqrt(goal_pos**2 - current_pos**2)
+                if distance <= 3:
+                    print("reached goal", j, goal_pos, current_pos)
+                    tot_rewards += 10
+                    goal_state, goal_x = self.generate_goal_discrete(observation)
+                    z = torch.nn.functional.one_hot(self.calculate_skill_discrete(observation, goal_state), self.latent_dim)
+                rewards.append(tot_rewards)
+            avg_rewards.append(rewards)
+        avg_rewards = np.array(avg_rewards)
+        avg_rewards = avg_rewards.mean(axis=0)
         return avg_rewards

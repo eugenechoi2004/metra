@@ -6,12 +6,12 @@ from matplotlib.colors import ListedColormap
 
 args = {
     "latent_low": -1,
-    "discrete": True,
+    "discrete": False,
     "latent_high": 1,
-    "latent_dim": 16,
+    "latent_dim": 2,
     "n_epochs": 10_000,
     "batch_size": 256,
-    "env_name": "HalfCheetah-v4",
+    "env_name": "Ant-v4",
     "lamb": 30.0,
     "lr": 0.0001,
     "episode_per_epoch": 8,

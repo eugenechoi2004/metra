@@ -1,6 +1,6 @@
 import gym
 import numpy as np
-from sac_torch import Agent
+from final.metra.models.SAC.agent import Agent
 from utils import plot_learning_curve
 
 if __name__ == '__main__':
